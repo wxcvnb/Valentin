@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="utf-8">
+
+<title>Sciences de l'Ingénieur – JPO 2026</title>
+
+<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.9.1/dist/nipplejs.min.js"></script>
+
+<style>
+
+body{
+    margin:0;
+    background:linear-gradient(180deg,#0f172a,#020617);
+    color:white;
+    font-family:Arial;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+}
+
+h1{
+    margin:0;
+    font-size:2.4em;
+}
+
+h2{
+    margin-top:5px;
+    font-weight:normal;
+    color:#60a5fa;
+}
+
+#connect{
+    margin-top:20px;
+    padding:10px 18px;
+    font-size:1.1em;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+#connect:hover{
+    background:#1d4ed8;
+}
+
+#zone{
+    width:320px;
+    height:320px;
+    margin-top:40px;
+    background:#111827;
+    border-radius:50%;
+    box-shadow:
+        inset 0 0 30px rgba(0,0,0,0.7),
+        0 0 30px rgba(59,130,246,0.5);
+}
+
+footer{
+    position:absolute;
+    bottom:10px;
+    font-size:0.9em;
+    opacity:0.6;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Sciences de l'Ingénieur</h1>
+<h2>Journées Portes Ouvertes 2026</h2>
+
+<button id="connect">Connexion ESP32</button>
+
+<div id="zone"></div>
+
+<footer>Contrôle d'un anneau NeoPixel via Bluetooth Low Energy</footer>
+
+<script>
+
+// =======================
+// UUID BLE
+// =======================
+
+const SERVICE_UUID = "c581f0d5-bda0-452c-9012-f4fda0042202";
+const COLOR_UUID   = "c581f0d5-bda1-452c-9012-f4fda0042202";
+const BRIGHT_UUID  = "c581f0d5-bda2-452c-9012-f4fda0042202";
+
+let device;
+let server;
+let colorChar;
+let brightChar;
+
+
+// =======================
+// Connexion BLE
+// =======================
+
+async function connect(){
+
+device = await navigator.bluetooth.requestDevice({
+acceptAllDevices:true,
+optionalServices:[SERVICE_UUID]
+});
+
+server = await device.gatt.connect();
+
+const service = await server.getPrimaryService(SERVICE_UUID);
+
+colorChar  = await service.getCharacteristic(COLOR_UUID);
+brightChar = await service.getCharacteristic(BRIGHT_UUID);
+
+alert("ESP32 connecté");
+
+}
+
+document.getElementById("connect").onclick = connect;
+
+
+// =======================
+// Couleur aléatoire
+// =======================
+
+function randomColor(){
+
+return [
+Math.floor(Math.random()*255),
+Math.floor(Math.random()*255),
+Math.floor(Math.random()*255)
+];
+
+}
+
+
+// =======================
+// Angle → LED
+// =======================
+
+function angleToLed(angle){
+
+let led = Math.floor(angle / 30) % 12;
+return led;
+
+}
+
+
+// =======================
+// Joystick
+// =======================
+
+const joystick = nipplejs.create({
+
+zone:document.getElementById("zone"),
+mode:"static",
+position:{left:"50%",top:"50%"},
+color:"white"
+
+});
+
+
+// =======================
+// Mouvement
+// =======================
+
+joystick.on("move", async (evt,data)=>{
+
+if(!colorChar || !brightChar) return;
+
+let angle = data.angle.degree;
+let force = Math.min(data.force,1);
+
+let led = angleToLed(angle);
+
+let [r,g,b] = randomColor();
+
+let brightness = Math.floor(force*100);
+
+await colorChar.writeValue(
+new Uint8Array([led,r,g])
+);
+
+await brightChar.writeValue(
+new Uint8Array([brightness])
+);
+
+});
+
+
+// =======================
+// Centre → animation
+// =======================
+
+joystick.on("end", async ()=>{
+
+if(!brightChar) return;
+
+await brightChar.writeValue(
+new Uint8Array([0])
+);
+
+});
+
+</script>
+
+</body>
+</html>

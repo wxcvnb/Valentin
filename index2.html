@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>ESP32 BLE Joystick</title>
+
+<!-- NippleJS via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.9.1/dist/nipplejs.min.js"></script>
+
+<style>
+body {
+    background: #111;
+    color: white;
+    text-align: center;
+    font-family: Arial;
+}
+
+#zone {
+    width: 300px;
+    height: 300px;
+    margin: 40px auto;
+    background: #222;
+    border-radius: 50%;
+}
+
+button {
+    font-size: 1.2em;
+    padding: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Joystick BLE – ESP32</h1>
+
+<button onclick="connect()">🔗 Connexion BLE</button>
+
+<div id="zone"></div>
+
+<script>
+// =======================
+// UUIDs BLE (ESP32)
+// =======================
+const SERVICE_UUID = '177e6db6-33e5-42fa-9e64-093ccd59eca6';
+const COLOR_UUID   = '177e6db7-33e5-42fa-9e64-093ccd59eca6';
+const BRIGHT_UUID  = '177e6db8-33e5-42fa-9e64-093ccd59eca6';
+
+let device, server, colorChar, brightChar;
+
+// =======================
+// Connexion BLE
+// =======================
+async function connect() {
+    device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [SERVICE_UUID] 
+    });
+
+    server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+
+    colorChar  = await service.getCharacteristic(COLOR_UUID);
+    brightChar = await service.getCharacteristic(BRIGHT_UUID);
+
+    alert("ESP32 connecté !");
+}
+
+// =======================
+// Conversion angle → RGB
+// =======================
+function angleToRGB(angle) {
+    const rad = angle * Math.PI / 180;
+    const r = Math.max(0, Math.cos(rad)) * 255;
+    const g = Math.max(0, Math.cos(rad - 2*Math.PI/3)) * 255;
+    const b = Math.max(0, Math.cos(rad - 4*Math.PI/3)) * 255;
+    return [r|0, g|0, b|0];
+}
+
+// =======================
+// NippleJS
+// =======================
+const joystick = nipplejs.create({
+    zone: document.getElementById('zone'),
+    mode: 'static',
+    position: { left: '50%', top: '50%' },
+    color: 'white'
+});
+
+// =======================
+// Mouvement joystick
+// =======================
+joystick.on('move', (evt, data) => {
+    if (!colorChar || !brightChar) return;
+
+    const angle = data.angle.degree;
+    const force = Math.min(data.force, 1);
+
+    const [r, g, b] = angleToRGB(angle);
+    const brightness = Math.floor(Math.pow(force, 2) * 100);
+
+    colorChar.writeValue(new Uint8Array([r, g, b]));
+    brightChar.writeValue(new Uint8Array([brightness]));
+});
+
+// =======================
+// Relâchement joystick
+// =======================
+joystick.on('end', () => {
+    if (!brightChar) return;
+    brightChar.writeValue(new Uint8Array([0]));
+});
+</script>
+
+</body>
+</html>

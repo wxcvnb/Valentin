@@ -35,13 +35,14 @@ let colorChar;
 let brightChar;
 
 // UUIDs (identiques à l'ESP32)
-const SERVICE_UUID = '177e6db6-33e5-42fa-9e64-093ccd59eca6';
-const COLOR_UUID   = '177e6db7-33e5-42fa-9e64-093ccd59eca6';
-const BRIGHT_UUID  = '177e6db8-33e5-42fa-9e64-093ccd59eca6';
+const SERVICE_UUID = 'c581f0d5-bda0-452c-9012-f4fda0042202';
+const COLOR_UUID   = 'c581f0d5-bda1-452c-9012-f4fda0042202';
+const BRIGHT_UUID  = 'c581f0d5-bda2-452c-9012-f4fda0042202';
 
 async function connect() {
     device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }]
+        acceptAllDevices: true,
+        optionalServices: [SERVICE_UUID] 
     });
 
     server = await device.gatt.connect();
@@ -75,3 +76,6 @@ function sendBrightness() {
 
 </body>
 </html>
+
+
+
