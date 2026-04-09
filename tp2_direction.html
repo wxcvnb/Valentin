@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP2 — Direction Aéroglisseur</title>
+<style>
+  :root {
+    --bleu:   #1a73e8;
+    --vert:   #2e7d32;
+    --rouge:  #c62828;
+    --orange: #e65100;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #222;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--orange);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header h1 { font-size: 1.2em; }
+
+  #statut-ble {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+  }
+  #dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ef9a9a;
+    transition: background 0.3s;
+  }
+  #dot.connecte { background: #a5d6a7; }
+
+  main {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .carte {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  }
+
+  .carte h2 {
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #555;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #f5f5f5;
+    padding-bottom: 8px;
+  }
+
+  /* ── Boutons ── */
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 22px;
+    font-size: .95em;
+    cursor: pointer;
+    color: white;
+  }
+  .btn-bleu  { background: var(--bleu);  width: 100%; }
+  .btn-rouge { background: var(--rouge); width: 100%; font-size: 1.1em; font-weight: bold; }
+  .btn:disabled { background: #aaa; cursor: not-allowed; }
+  .btn:not(:disabled):hover { filter: brightness(1.1); }
+
+  .info {
+    background: #fff3e0;
+    border-left: 4px solid var(--orange);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: .88em;
+    color: #4e342e;
+    margin-bottom: 12px;
+  }
+
+  /* ── Schéma tuyères ── */
+  .schema {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 16px;
+  }
+
+  svg#aeroglisseur { width: 100%; max-width: 320px; }
+
+  /* ── Joystick NippleJS ── */
+  #zone-nipple {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 240px;
+    position: relative;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ccc;
+    margin-bottom: 16px;
+  }
+  #nipple-container {
+    width: 180px; height: 180px;
+    position: relative;
+  }
+
+  /* ── Valeurs numériques ── */
+  .valeurs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .valeur-bloc {
+    flex: 1;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .valeur-bloc .label {
+    font-size: .78em;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 4px;
+  }
+  .valeur-bloc .val {
+    font-size: 1.8em;
+    font-weight: bold;
+  }
+  #val-lr { color: var(--bleu); }
+  #val-fb { color: var(--orange); }
+
+  /* flèche indicatrice dans le schéma */
+  #fleche-aero { transition: transform .1s; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TP2 — Direction Aéroglisseur</h1>
+  <div id="statut-ble">
+    <div id="dot"></div>
+    <span id="txt-statut">Déconnecté</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Connexion BLE ──────────────────────────────────────── -->
+  <div class="carte">
+    <h2>1 · Connexion Bluetooth</h2>
+    <div class="info">
+      Assure-toi que l'ESP32 est alimenté et que le moteur de sustentation
+      tourne (coussin d'air formé).
+    </div>
+    <button class="btn btn-bleu" id="btn-connect" onclick="connecter()">
+      🔗 Connecter l'ESP32
+    </button>
+  </div>
+
+  <!-- ── Schéma + Joystick ─────────────────────────────────── -->
+  <div class="carte" id="section-controle" style="display:none;">
+    <h2>2 · Commande de direction</h2>
+
+    <!-- Schéma SVG de l'aéroglisseur vu de dessus -->
+    <div class="schema">
+      <svg id="aeroglisseur" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Corps -->
+        <rect x="60" y="40" width="80" height="220" rx="20" ry="20"
+              fill="#e0e0e0" stroke="#999" stroke-width="2"/>
+
+        <!-- Tuyère gauche (servo LR) -->
+        <rect id="tuyere-gauche" x="28" y="80" width="32" height="140" rx="6"
+              fill="#90caf9" stroke="#1a73e8" stroke-width="1.5"/>
+        <text x="44" y="157" text-anchor="middle" font-size="9" fill="#1a73e8">G</text>
+
+        <!-- Tuyère droite (servo LR) -->
+        <rect id="tuyere-droite" x="140" y="80" width="32" height="140" rx="6"
+              fill="#90caf9" stroke="#1a73e8" stroke-width="1.5"/>
+        <text x="156" y="157" text-anchor="middle" font-size="9" fill="#1a73e8">D</text>
+
+        <!-- Volet avant (servo FB) -->
+        <rect id="volet-avant" x="70" y="28" width="60" height="18" rx="4"
+              fill="#ffcc80" stroke="#e65100" stroke-width="1.5"/>
+        <text x="100" y="41" text-anchor="middle" font-size="9" fill="#e65100">AV</text>
+
+        <!-- Volet arrière (servo FB) -->
+        <rect id="volet-arriere" x="70" y="254" width="60" height="18" rx="4"
+              fill="#ffcc80" stroke="#e65100" stroke-width="1.5"/>
+        <text x="100" y="267" text-anchor="middle" font-size="9" fill="#e65100">AR</text>
+
+        <!-- Flèche de direction -->
+        <g id="fleche-aero">
+          <polygon points="100,110 92,130 100,124 108,130"
+                   fill="#e53935" opacity="0"/>
+          <line id="fleche-ligne" x1="100" y1="150" x2="100" y2="150"
+                stroke="#e53935" stroke-width="3" stroke-linecap="round"/>
+          <polygon id="fleche-pointe" points="100,150 93,165 107,165"
+                   fill="#e53935" opacity="0"/>
+        </g>
+
+        <!-- Etiquette -->
+        <text x="100" y="298" text-anchor="middle" font-size="8" fill="#888">
+          Vue de dessus
+        </text>
+      </svg>
+    </div>
+
+    <!-- Joystick 2 axes -->
+    <div id="zone-nipple">
+      <div id="nipple-container"></div>
+    </div>
+
+    <!-- Valeurs numériques -->
+    <div class="valeurs">
+      <div class="valeur-bloc">
+        <div class="label">◄ Gauche / Droite ►</div>
+        <div class="val" id="val-lr">0</div>
+        <div style="font-size:.75em;color:#aaa;">servo G/D</div>
+      </div>
+      <div class="valeur-bloc">
+        <div class="label">▲ Avant / Arrière ▼</div>
+        <div class="val" id="val-fb">0</div>
+        <div style="font-size:.75em;color:#aaa;">servo AV/AR</div>
+      </div>
+    </div>
+
+    <!-- Bouton centrage -->
+    <button class="btn" style="background:#555;width:100%;margin-bottom:10px;"
+            onclick="centrer()">
+      ⊙ Centrer (position neutre)
+    </button>
+
+    <button class="btn btn-rouge" onclick="arretUrgence()">
+      ⛔ ARRÊT D'URGENCE
+    </button>
+  </div>
+
+</main>
+
+<!-- NippleJS (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// UUIDs — !! modifier ici ET dans le firmware pour votre binôme !!
+// ═══════════════════════════════════════════════════════════════════
+const SERVICE_UUID  = "a2b3c4d5-0001-4abc-8def-123456789abc";
+const SERVO_LR_UUID = "a2b3c4d5-0005-4abc-8def-123456789abc";
+const SERVO_FB_UUID = "a2b3c4d5-0006-4abc-8def-123456789abc";
+
+// ═══════════════════════════════════════════════════════════════════
+// Variables globales
+// ═══════════════════════════════════════════════════════════════════
+let device, servoLRChar, servoFBChar;
+let dernierEnvoi = 0;
+const INTERVALLE_MIN = 50;   // ms
+
+// ═══════════════════════════════════════════════════════════════════
+// Connexion BLE
+// ═══════════════════════════════════════════════════════════════════
+async function connecter() {
+  try {
+    document.getElementById('btn-connect').disabled = true;
+    document.getElementById('txt-statut').textContent = 'Connexion…';
+
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }]
+    });
+
+    device.addEventListener('gattserverdisconnected', onDeconnexion);
+
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+
+    servoLRChar = await service.getCharacteristic(SERVO_LR_UUID);
+    servoFBChar = await service.getCharacteristic(SERVO_FB_UUID);
+
+    setUI(true);
+    initJoystick();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('btn-connect').disabled = false;
+    document.getElementById('txt-statut').textContent = 'Erreur : ' + err.message;
+  }
+}
+
+function onDeconnexion() {
+  setUI(false);
+}
+
+function setUI(connecte) {
+  document.getElementById('dot').className          = connecte ? 'connecte' : '';
+  document.getElementById('txt-statut').textContent = connecte ? 'Connecté' : 'Déconnecté';
+  document.getElementById('btn-connect').disabled   = connecte;
+  document.getElementById('section-controle').style.display = connecte ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Envoi des valeurs servos
+// ═══════════════════════════════════════════════════════════════════
+async function envoyerServos(lr, fb) {
+  if (!servoLRChar || !servoFBChar) return;
+
+  const maintenant = Date.now();
+  if (maintenant - dernierEnvoi < INTERVALLE_MIN) return;
+  dernierEnvoi = maintenant;
+
+  lr = Math.max(-100, Math.min(100, Math.round(lr)));
+  fb = Math.max(-100, Math.min(100, Math.round(fb)));
+
+  // Affichage numérique
+  document.getElementById('val-lr').textContent = (lr >= 0 ? '+' : '') + lr;
+  document.getElementById('val-fb').textContent = (fb >= 0 ? '+' : '') + fb;
+
+  // Mise à jour schéma SVG
+  mettreAJourSchema(lr, fb);
+
+  try {
+    // Encodage int8 signé (−100 à +100) dans un octet
+    const bufLR = new Int8Array([lr]);
+    const bufFB = new Int8Array([fb]);
+    await servoLRChar.writeValue(bufLR);
+    await servoFBChar.writeValue(bufFB);
+  } catch (err) {
+    console.error('Erreur envoi servo:', err);
+  }
+}
+
+async function centrer() {
+  await envoyerServos(0, 0);
+  document.getElementById('val-lr').textContent = '0';
+  document.getElementById('val-fb').textContent = '0';
+  mettreAJourSchema(0, 0);
+}
+
+async function arretUrgence() {
+  await centrer();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Retour visuel sur le schéma SVG
+// ═══════════════════════════════════════════════════════════════════
+function mettreAJourSchema(lr, fb) {
+  // Tuyères gauche/droite — opacité selon valeur LR
+  const tg = document.getElementById('tuyere-gauche');
+  const td = document.getElementById('tuyere-droite');
+  if (lr < 0) {
+    // Virage à gauche : tuyère gauche active (air dévié à gauche)
+    tg.setAttribute('fill', '#1a73e8');
+    td.setAttribute('fill', '#90caf9');
+  } else if (lr > 0) {
+    tg.setAttribute('fill', '#90caf9');
+    td.setAttribute('fill', '#1a73e8');
+  } else {
+    tg.setAttribute('fill', '#90caf9');
+    td.setAttribute('fill', '#90caf9');
+  }
+
+  // Volets avant/arrière — opacité selon valeur FB
+  const va = document.getElementById('volet-avant');
+  const vr = document.getElementById('volet-arriere');
+  if (fb > 0) {
+    // Vers l'avant : volet avant actif
+    va.setAttribute('fill', '#e65100');
+    vr.setAttribute('fill', '#ffcc80');
+  } else if (fb < 0) {
+    va.setAttribute('fill', '#ffcc80');
+    vr.setAttribute('fill', '#e65100');
+  } else {
+    va.setAttribute('fill', '#ffcc80');
+    vr.setAttribute('fill', '#ffcc80');
+  }
+
+  // Flèche de direction résultante
+  const fleche   = document.getElementById('fleche-aero');
+  const ligne    = document.getElementById('fleche-ligne');
+  const pointe   = document.getElementById('fleche-pointe');
+  const cx = 100, cy = 150;
+  const magnitude = Math.sqrt(lr*lr + fb*fb) / 100;
+
+  if (magnitude > 0.05) {
+    const dx = (lr / 100) * 40;
+    const dy = -(fb / 100) * 40;    // SVG : y croissant vers le bas
+    const ex = cx + dx;
+    const ey = cy + dy;
+
+    ligne.setAttribute('x1', cx); ligne.setAttribute('y1', cy);
+    ligne.setAttribute('x2', ex); ligne.setAttribute('y2', ey);
+
+    const angle = Math.atan2(dy, dx);
+    const hl = 10;
+    const p1x = ex - hl * Math.cos(angle - 0.4);
+    const p1y = ey - hl * Math.sin(angle - 0.4);
+    const p2x = ex - hl * Math.cos(angle + 0.4);
+    const p2y = ey - hl * Math.sin(angle + 0.4);
+    pointe.setAttribute('points', `${ex},${ey} ${p1x},${p1y} ${p2x},${p2y}`);
+    pointe.setAttribute('opacity', '1');
+  } else {
+    ligne.setAttribute('x1', cx); ligne.setAttribute('y1', cy);
+    ligne.setAttribute('x2', cx); ligne.setAttribute('y2', cy);
+    pointe.setAttribute('opacity', '0');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Initialisation NippleJS 2 axes
+// ═══════════════════════════════════════════════════════════════════
+function initJoystick() {
+  const manager = nipplejs.create({
+    zone:     document.getElementById('nipple-container'),
+    mode:     'static',
+    position: { left: '50%', top: '50%' },
+    color:    '#e65100',
+    size:     160
+  });
+
+  manager.on('move', (evt, data) => {
+    if (!data.vector) return;
+    const lr = data.vector.x * 100;   // axe X  → gauche/droite
+    const fb = data.vector.y * 100;   // axe Y  → avant/arrière
+    envoyerServos(lr, fb);
+  });
+
+  manager.on('end', () => {
+    // Retour automatique au centre quand on relâche
+    envoyerServos(0, 0);
+  });
+}
+</script>
+
+</body>
+</html>

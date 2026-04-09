@@ -1,0 +1,470 @@
+---
+title: ""
+format:
+  pdf:
+    documentclass: article
+    papersize: a4
+    fontsize: 11pt
+    geometry: "left=2cm, right=2cm, top=2cm, bottom=2cm"
+    lang: fr
+    include-in-header:
+      text: |
+        \usepackage{array}
+        \usepackage{colortbl}
+        \usepackage{xcolor}
+        \usepackage{tabularx}
+        \usepackage{multirow}
+        \usepackage{mdframed}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{tcolorbox}
+        \usepackage{enumitem}
+        \usepackage{graphicx}
+        \usepackage{hyperref}
+        \tcbuselibrary{skins, breakable}
+        \definecolor{bleuSI}{RGB}{0, 90, 156}
+        \definecolor{orangeSI}{RGB}{210, 95, 0}
+        \definecolor{vertSI}{RGB}{40, 120, 60}
+        \definecolor{jauneSI}{RGB}{255, 200, 0}
+        \definecolor{grisclair}{RGB}{245, 245, 245}
+        \definecolor{orangeclair}{RGB}{255, 243, 220}
+        \definecolor{vertclair}{RGB}{220, 240, 220}
+        \definecolor{rougeclair}{RGB}{255, 230, 230}
+execute:
+  echo: false
+  warning: false
+---
+
+```{=latex}
+\noindent
+\begin{tabular}{|p{3.2cm}|p{8.2cm}|p{3.6cm}|}
+\hline
+\textbf{Seconde}\newline Option Sciences\newline de l'ingénieur &
+\centering\textbf{TP 1 — Commande d'un moteur brushless}\medskip\newline
+\centering Initiation à la programmation de systèmes embarqués\newline
+\centering Aéroglisseur &
+Cours\newline
+\colorbox{jauneSI}{\textbf{Travaux Pratiques}}\newline
+Aide-mémoire \\
+\hline
+\multicolumn{2}{|l|}{%
+  \textbf{Durée :} 1 h 30 \quad
+  \textbf{Outils :} navigateur web (Chrome/Edge) \quad
+  \textbf{Matériel :} ESP32-C3, aéroglisseur, ESC Dualsky XC-12-Lite} &
+\textbf{Travail en binôme} \\
+\hline
+\end{tabular}
+```
+
+```{=latex}
+\vspace{0.4cm}
+\begin{center}
+\begin{tabular}{p{0.8cm}p{9cm}p{1.8cm}}
+\colorbox{bleuSI}{\textcolor{white}{\textbf{A}}} & Prise en main \textemdash{} connexion BLE et procédure d'armement & 20 min \\[4pt]
+\colorbox{bleuSI}{\textcolor{white}{\textbf{B}}} & Commande par curseur \textemdash{} relation commande / vitesse & 25 min \\[4pt]
+\colorbox{bleuSI}{\textcolor{white}{\textbf{C}}} & Commande par joystick virtuel (NippleJS) & 20 min \\[4pt]
+\colorbox{bleuSI}{\textcolor{white}{\textbf{D}}} & Bilan et questions & 25 min \\
+\end{tabular}
+\end{center}
+\vspace{0.2cm}
+```
+
+---
+
+**Contexte.** L'aéroglisseur utilise un moteur **brushless** (sans balais) pour générer
+le coussin d'air qui le soulève. Ce moteur est piloté par un **ESC** (\textit{Electronic Speed
+Controller}) qui traduit un signal numérique en courant triphasé.
+Dans ce TP, vous allez commander la vitesse de ce moteur depuis une page web,
+en communiquant sans fil par **Bluetooth Low Energy (BLE)** avec un microcontrôleur ESP32.
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=grisclair, colframe=bleuSI!50,
+  title={\textbf{Objectifs du TP}}]
+\begin{itemize}[noitemsep]
+  \item Réaliser la procédure d'armement et de calibration de l'ESC.
+  \item Comprendre la relation entre la valeur numérique envoyée et la vitesse du moteur.
+  \item Utiliser deux interfaces de commande différentes : curseur et joystick virtuel.
+  \item Identifier l'influence des paramètres de l'ESC sur le comportement du moteur.
+\end{itemize}
+\end{tcolorbox}
+```
+
+---
+
+# Rappels — Le moteur brushless et l'ESC
+
+## Le moteur brushless
+
+Un moteur brushless est un moteur électrique **sans contacts glissants** (sans balais ni
+collecteur). Le rotor est un aimant permanent ; le stator porte trois bobines alimentées
+en courant triphasé. La rotation est obtenue en commutant électroniquement les bobines
+dans le bon ordre.
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=vertclair, colframe=vertSI!60, title={\textbf{Avantages du brushless}}]
+Rendement élevé ($> 85\,\%$) \quad — \quad Longue durée de vie \quad — \quad
+Rapport puissance/masse excellent \quad — \quad Pas d'étincelles
+\end{tcolorbox}
+```
+
+## L'ESC et le signal PWM
+
+L'ESC est le pont entre le microcontrôleur et le moteur.
+Il reçoit un signal **PWM** (\textit{Pulse Width Modulation} — modulation de largeur d'impulsion)
+et génère en sortie le courant triphasé proportionnel à la consigne reçue.
+
+```{=latex}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Paramètre PWM} & \textbf{Valeur} & \textbf{Rôle} \\
+\hline
+Fréquence & 50 Hz (période = 20 ms) & Cadence des impulsions \\
+Impulsion MIN & 0,5 ms & Moteur à l'arrêt (0\,\%) \\
+Impulsion MAX & 2,5 ms & Pleine puissance (100\,\%) \\
+\hline
+\end{tabular}
+\end{center}
+```
+
+\vspace{0.2cm}
+
+```{=latex}
+\noindent\textbf{Représentation d'un signal PWM à 50\,\% :}
+
+\vspace{0.3cm}
+\begin{tikzpicture}[scale=0.9]
+  % Nécessite \usepackage{tikz} — remplacer par une figure si tikz non disponible
+\end{tikzpicture}
+```
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=orangeclair, colframe=orangeSI!60,
+  title={\textbf{Calcul du rapport cyclique — duty\_u16 (MicroPython)}}]
+L'ESP32-C3 représente le rapport cyclique sur 16 bits (valeur de 0 à 65\,535).
+
+$$\texttt{duty\_u16} = \frac{t_{\text{impulsion}}\ (\text{ms})}{20\ \text{ms}} \times 65\,535$$
+
+\begin{center}
+\begin{tabular}{lcc}
+Impulsion 0,5 ms (arrêt) : & $\dfrac{0{,}5}{20} \times 65\,535$ & $= \mathbf{1638}$ \\[8pt]
+Impulsion 1,5 ms (mi-course) : & $\dfrac{1{,}5}{20} \times 65\,535$ & $= \mathbf{4916}$ \\[8pt]
+Impulsion 2,5 ms (pleine puissance) : & $\dfrac{2{,}5}{20} \times 65\,535$ & $= \mathbf{8192}$ \\
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+```
+
+---
+
+# Partie A — Prise en main *(20 min)*
+
+## A1 — Préparation
+
+**Matériel à disposition :**
+
+```{=latex}
+\begin{itemize}[noitemsep]
+  \item Aéroglisseur avec ESP32-C3 et ESC Dualsky XC-12-Lite
+  \item Ordinateur ou tablette avec navigateur Chrome ou Edge
+  \item Lien vers la page TP1 (GitHub Pages de votre fork) : \texttt{https://\textit{votre-pseudo}.github.io/4webbluetooth/tp1\_moteur.html}
+\end{itemize}
+```
+
+**Vérification préalable :**
+
+```{=latex}
+\begin{itemize}[noitemsep]
+  \item[$\square$] L'ESP32 est alimenté — la LED NeoPixel est \textcolor{red}{\textbf{rouge fixe}}.
+  \item[$\square$] La batterie de l'ESC est \textbf{débranchée}.
+  \item[$\square$] La page HTML est ouverte en HTTPS (Web Bluetooth ne fonctionne pas en HTTP).
+\end{itemize}
+```
+
+## A2 — Connexion BLE
+
+1. Cliquer sur **Connecter l'ESP32** dans la page web.
+2. Dans la fenêtre de sélection, choisir **Aeroglisseur** (ou le nom configuré par votre binôme).
+3. La LED passe au **bleu pâle** : la connexion est établie.
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=rougeclair, colframe=red!50,
+  title={\textbf{Sécurité — à lire avant de continuer}}]
+\begin{itemize}[noitemsep]
+  \item Ne jamais approcher les doigts ou des objets de l'hélice lorsque le moteur tourne.
+  \item Ne jamais laisser l'aéroglisseur sans surveillance lorsque la batterie est connectée.
+  \item En cas de problème, utiliser le bouton \textbf{ARRET D'URGENCE} de la page web
+        ou débrancher immédiatement la batterie.
+\end{itemize}
+\end{tcolorbox}
+```
+
+## A3 — Procédure de calibration et d'armement de l'ESC
+
+La première utilisation nécessite d'apprendre à l'ESC les valeurs MIN et MAX du signal PWM.
+Suivre les étapes affichées dans la page web :
+
+```{=latex}
+\begin{center}
+\begin{tabular}{|c|p{5cm}|p{3.5cm}|p{3cm}|}
+\hline
+\textbf{Étape} & \textbf{Action} & \textbf{Signal sonore ESC} & \textbf{LED ESP32} \\
+\hline
+1 & Mettre le curseur à \textbf{100\,\%} & — & \textcolor{orange}{\textbf{Orange}} \\
+\hline
+2 & Connecter la batterie & Mélodie + bips cellules & \textcolor{orange}{\textbf{Orange}} \\
+\hline
+3 & Entendre le \textbf{long bip} (MAX détecté) & 1 long bip & \textcolor{blue}{\textbf{Bleu}} \\
+\hline
+4 & Cliquer — throttle passe à \textbf{0\,\%} & — & \textcolor{violet}{\textbf{Violet}} \\
+\hline
+5 & Entendre la \textbf{mélodie} (MIN + armé) & Mélodie & \textcolor{green}{\textbf{Vert}} \\
+\hline
+\end{tabular}
+\end{center}
+```
+
+\vspace{0.2cm}
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=vertclair, colframe=vertSI!60,
+  title={\textbf{Deuxièmes utilisations (démarrage rapide)}}]
+Si l'ESC est déjà calibré, la procédure simplifiée suffit :
+throttle à \textbf{0\,\%} $\to$ connecter la batterie $\to$ attendre les bips de comptage cellules
+$\to$ ESC armé.
+\end{tcolorbox}
+```
+
+**Q1.** Combien de bips entendez-vous lors de l'étape 2 ? Que signifient-ils ?
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.8cm}
+
+---
+
+# Partie B — Commande par curseur *(25 min)*
+
+## B1 — Prise de mesures
+
+Une fois l'ESC armé (LED verte), la section **Commande des gaz** apparaît.
+S'assurer que le mode **Curseur** est sélectionné.
+
+Déplacer progressivement le curseur et observer le comportement du moteur.
+Relever dans le tableau ci-dessous la valeur du curseur à laquelle :
+
+```{=latex}
+\begin{center}
+\begin{tabular}{|p{7cm}|c|}
+\hline
+\textbf{Observation} & \textbf{Valeur du curseur (\%)} \\
+\hline
+Le moteur commence à tourner (seuil de démarrage) & \\
+\hline
+Le moteur tourne à vitesse modérée, régulière & \\
+\hline
+Le moteur atteint sa vitesse maximale & \\
+\hline
+\end{tabular}
+\end{center}
+```
+
+**Q2.** La relation entre la valeur du curseur et la vitesse de rotation vous semble-t-elle linéaire ?
+Justifier qualitativement.
+
+\vspace{1.2cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+## B2 — Le signal PWM vu par l'ESP32
+
+**Q3.** En vous aidant du tableau de rappel (page 1), calculer la valeur \texttt{duty\_u16}
+correspondant à une impulsion de \textbf{1,0 ms} (position de départ avant calibration étendue).
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+**Q4.** Avec la plage étendue (0,5 ms à 2,5 ms), combien de niveaux de vitesse distincts
+peut-on théoriquement représenter ? Comparer avec une plage standard (1,0 ms à 2,0 ms).
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+## B3 — Extrait du code MicroPython
+
+Voici la fonction de conversion utilisée dans le firmware de l'ESP32 :
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=grisclair, colframe=bleuSI!40,
+  title={\texttt{aeroglisseur\_ble.py} — fonction \texttt{set\_throttle}}]
+\begin{verbatim}
+ESC_MIN = 1638   # duty_u16 pour 0,5 ms
+ESC_MAX = 8192   # duty_u16 pour 2,5 ms
+
+def set_throttle(pct):
+    """pct : entier 0-100"""
+    duty = int(ESC_MIN + (ESC_MAX - ESC_MIN) * pct / 100)
+    esc.duty_u16(duty)
+\end{verbatim}
+\end{tcolorbox}
+```
+
+**Q5.** Calculer la valeur \texttt{duty} renvoyée par \texttt{set\_throttle(50)}.
+Vérifier que cela correspond à une impulsion de 1,5 ms.
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+---
+
+# Partie C — Commande par joystick virtuel *(20 min)*
+
+## C1 — Basculer en mode Joystick
+
+Cliquer sur le bouton **Joystick** dans la page web. Un cercle représentant un joystick
+virtuel apparaît (bibliothèque **NippleJS**).
+
+## C2 — Prise en main
+
+Faire glisser le joystick vers le **haut** et observer :
+
+```{=latex}
+\begin{itemize}[noitemsep]
+  \item La valeur numérique affichée sous le joystick.
+  \item Le comportement du moteur.
+  \item Ce qui se passe quand on relâche le joystick.
+\end{itemize}
+```
+
+**Q6.** Quelle différence de comportement observez-vous entre le curseur (partie B)
+et le joystick (partie C) lorsque vous relâchez le contrôle ?
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+**Q7.** Dans quel sens doit-on déplacer le joystick pour accélérer ?
+Proposer une explication physique de ce choix de conception.
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+## C3 — Extrait JavaScript
+
+Voici comment la page web convertit la position du joystick en commande BLE :
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=grisclair, colframe=bleuSI!40,
+  title={\texttt{tp1\_moteur.html} — gestion du joystick NippleJS}]
+\begin{verbatim}
+manager.on('move', (evt, data) => {
+    const y = data.vector.y;           // valeur entre -1 et +1
+    const throttle = Math.max(0, y) * 100;
+    envoyerThrottle(throttle);
+});
+
+manager.on('end', () => {
+    envoyerThrottle(0);                // retour à 0 au relâchement
+});
+\end{verbatim}
+\end{tcolorbox}
+```
+
+**Q8.** Pourquoi utilise-t-on \texttt{Math.max(0, y)} plutôt que \texttt{y} directement ?
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+---
+
+# Partie D — Bilan *(25 min)*
+
+## D1 — Schéma fonctionnel
+
+Compléter le schéma de la chaîne de commande en plaçant les éléments suivants dans les cases :
+\textit{ESP32-C3, navigateur web, ESC, moteur brushless, BLE, PWM (50 Hz), signal numérique (0–100\,\%)}.
+
+```{=latex}
+\vspace{0.3cm}
+\begin{center}
+\begin{tabular}{ccccccc}
+\fbox{\parbox{2.2cm}{\centering\vspace{0.6cm}Interface\newline utilisateur\vspace{0.6cm}}} &
+$\xrightarrow{\quad\quad\quad}$ &
+\fbox{\parbox{2.2cm}{\centering\vspace{0.6cm}\phantom{xxxxxx}\vspace{0.6cm}}} &
+$\xrightarrow{\quad\quad\quad}$ &
+\fbox{\parbox{2.2cm}{\centering\vspace{0.6cm}\phantom{xxxxxx}\vspace{0.6cm}}} &
+$\xrightarrow{\quad\quad\quad}$ &
+\fbox{\parbox{2.2cm}{\centering\vspace{0.6cm}\phantom{xxxxxx}\vspace{0.6cm}}} \\
+& & & & & & \\
+\textit{navigateur} & \textit{protocole ?} & \textit{nom ?} & \textit{signal ?} & \textit{nom ?} & \textit{signal ?} & \textit{nom ?}
+\end{tabular}
+\end{center}
+\vspace{0.3cm}
+```
+
+## D2 — Questions de synthèse
+
+**Q9.** Quel est le rôle du protocole BLE dans cette chaîne ? Pourquoi ne pas utiliser le Wi-Fi ?
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+**Q10.** En cas de déconnexion Bluetooth inattendue, que se passe-t-il sur le moteur ?
+Comment est-ce géré dans le firmware ? (Chercher dans \texttt{aeroglisseur\_ble.py}, événement \texttt{\_IRQ\_CENTRAL\_DISCONNECT}.)
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+**Q11 (approfondissement).** Le paramètre \texttt{INTERVALLE\_MIN = 50 ms} est défini dans la page HTML.
+À quelle fréquence maximale les commandes BLE sont-elles envoyées ?
+Pourquoi limiter cette fréquence ?
+
+\vspace{0.8cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5cm}
+
+\noindent\rule{\linewidth}{0.4pt}
+
+---
+
+```{=latex}
+\begin{tcolorbox}[enhanced, colback=grisclair, colframe=bleuSI,
+  title={\textbf{Compte rendu — à remettre en fin de séance}}]
+\begin{itemize}[noitemsep]
+  \item Tableau de mesures complété (B1).
+  \item Réponses aux questions Q1 à Q11.
+  \item Schéma fonctionnel complété (D1).
+\end{itemize}
+\end{tcolorbox}
+```

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP1 — Moteur Brushless</title>
+<style>
+  :root {
+    --bleu:    #1a73e8;
+    --vert:    #2e7d32;
+    --orange:  #e65100;
+    --rouge:   #c62828;
+    --gris:    #f5f5f5;
+    --bordure: #ddd;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #222;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--bleu);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header h1 { font-size: 1.2em; }
+
+  #statut-ble {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+  }
+  #dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ef9a9a;
+    transition: background 0.3s;
+  }
+  #dot.connecte  { background: #a5d6a7; }
+
+  main {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .carte {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  }
+
+  .carte h2 {
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #555;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--gris);
+    padding-bottom: 8px;
+  }
+
+  /* ── Connexion BLE ── */
+  #btn-connect {
+    background: var(--bleu);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    width: 100%;
+  }
+  #btn-connect:hover { filter: brightness(1.1); }
+  #btn-connect:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* ── Wizard armement ── */
+  .etape {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--bordure);
+    opacity: .35;
+    transition: opacity .3s;
+  }
+  .etape:last-child { border-bottom: none; }
+  .etape.active  { opacity: 1; }
+  .etape.faite   { opacity: .6; }
+
+  .num {
+    min-width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #bbb;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: .9em;
+    transition: background .3s;
+  }
+  .etape.active .num  { background: var(--bleu); }
+  .etape.faite  .num  { background: var(--vert); }
+
+  .etape-body { flex: 1; }
+  .etape-body p { font-size: .95em; margin-bottom: 8px; }
+  .etape-body small { color: #777; font-size: .82em; }
+
+  .btn-etape {
+    margin-top: 10px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: .9em;
+    cursor: pointer;
+    background: var(--bleu);
+    color: white;
+  }
+  .btn-etape:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-etape.rouge    { background: var(--rouge); }
+
+  /* ── Contrôle vitesse ── */
+  #section-controle { display: none; }
+
+  .toggle-mode {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .toggle-mode button {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid var(--bleu);
+    border-radius: 6px;
+    background: white;
+    color: var(--bleu);
+    font-size: .9em;
+    cursor: pointer;
+  }
+  .toggle-mode button.actif {
+    background: var(--bleu);
+    color: white;
+  }
+
+  /* Slider */
+  #zone-slider { text-align: center; padding: 10px 0; }
+  #slider-throttle {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    margin: 12px 0;
+  }
+  #slider-throttle::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bleu);
+    cursor: pointer;
+  }
+
+  /* NippleJS */
+  #zone-nipple {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    height: 220px;
+    position: relative;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ccc;
+  }
+  #nipple-container {
+    width: 160px; height: 160px;
+    position: relative;
+  }
+
+  .valeur-throttle {
+    text-align: center;
+    font-size: 2.2em;
+    font-weight: bold;
+    color: var(--bleu);
+    margin: 10px 0 4px;
+  }
+  .valeur-throttle span { font-size: .5em; color: #888; font-weight: normal; }
+
+  /* Arrêt d'urgence */
+  #btn-stop {
+    width: 100%;
+    padding: 14px;
+    background: var(--rouge);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: .03em;
+    margin-top: 14px;
+  }
+  #btn-stop:hover { filter: brightness(1.1); }
+
+  /* Message info */
+  .info {
+    background: #e3f2fd;
+    border-left: 4px solid var(--bleu);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: .88em;
+    color: #1a237e;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TP1 — Moteur Brushless</h1>
+  <div id="statut-ble">
+    <div id="dot"></div>
+    <span id="txt-statut">Déconnecté</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Connexion BLE ───────────────────────────────────────── -->
+  <div class="carte">
+    <h2>1 · Connexion Bluetooth</h2>
+    <div class="info" style="margin-bottom:12px;">
+      Assure-toi que l'ESP32 est alimenté (LED rouge fixe = en attente).
+    </div>
+    <button id="btn-connect" onclick="connecter()">🔗 Connecter l'ESP32</button>
+  </div>
+
+  <!-- ── Wizard armement ────────────────────────────────────── -->
+  <div class="carte" id="section-wizard" style="display:none;">
+    <h2>2 · Procédure d'armement ESC</h2>
+
+    <!-- Étape 1 -->
+    <div class="etape" id="etape1">
+      <div class="num">1</div>
+      <div class="etape-body">
+        <p><strong>Mettre les gaz à 100 % (MAX)</strong></p>
+        <small>L'ESC doit détecter l'impulsion maximale dès la mise sous tension
+               pour apprendre la plage PWM.</small><br>
+        <input type="range" id="pre-slider" min="0" max="100" value="0"
+               oninput="verifierCent()" style="width:100%;margin-top:8px;">
+        <div id="pre-val" style="text-align:center;font-weight:bold;color:#c62828;">0 %</div>
+        <button class="btn-etape" id="btn-etape1" onclick="armerEtape(1)" disabled>
+          ✓ Gaz à 100 % — Étape suivante
+        </button>
+      </div>
+    </div>
+
+    <!-- Étape 2 -->
+    <div class="etape" id="etape2">
+      <div class="num">2</div>
+      <div class="etape-body">
+        <p><strong>Connecter la batterie maintenant</strong></p>
+        <small>Brancher la batterie à l'ESC avec le throttle à 100 %.<br>
+               L'ESC détecte l'impulsion haute et joue une mélodie.</small>
+        <button class="btn-etape" id="btn-etape2" onclick="armerEtape(2)">
+          Batterie connectée
+        </button>
+      </div>
+    </div>
+
+    <!-- Étape 3 -->
+    <div class="etape" id="etape3">
+      <div class="num">3</div>
+      <div class="etape-body">
+        <p><strong>Bips de reconnaissance du MAX entendus</strong></p>
+        <small>Dès que tu entends les bips confirmer la position haute,
+               clique — le throttle va automatiquement passer à 0 %.</small>
+        <button class="btn-etape" id="btn-etape3" onclick="armerEtape(3)">
+          Bips MAX entendus
+        </button>
+      </div>
+    </div>
+
+    <!-- Étape 4 -->
+    <div class="etape" id="etape4">
+      <div class="num">4</div>
+      <div class="etape-body">
+        <p><strong>Attendre les bips de confirmation MIN</strong></p>
+        <small>Le throttle est maintenant à 0 %. L'ESC apprend l'impulsion basse.<br>
+               Cliquer dès que tu entends les bips de confirmation.</small>
+        <button class="btn-etape" id="btn-etape4" onclick="armerEtape(4)">
+          Bips MIN entendus — ESC armé
+        </button>
+      </div>
+    </div>
+
+    <!-- Étape 5 -->
+    <div class="etape" id="etape5">
+      <div class="num">5</div>
+      <div class="etape-body">
+        <p><strong>ESC calibré et armé</strong></p>
+        <small>La plage PWM est mémorisée. Le moteur répond aux commandes.</small>
+        <button class="btn-etape rouge" onclick="desarmer()">
+          Désarmer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Contrôle vitesse ───────────────────────────────────── -->
+  <div class="carte" id="section-controle">
+    <h2>3 · Commande des gaz</h2>
+
+    <div class="toggle-mode">
+      <button id="btn-mode-slider" class="actif" onclick="setMode('slider')">
+        🎚 Curseur
+      </button>
+      <button id="btn-mode-nipple" onclick="setMode('nipple')">
+        🕹 Joystick
+      </button>
+    </div>
+
+    <!-- Mode slider -->
+    <div id="zone-slider">
+      <input type="range" id="slider-throttle"
+             min="0" max="100" value="0"
+             oninput="envoyerThrottle(parseInt(this.value))">
+    </div>
+
+    <!-- Mode NippleJS -->
+    <div id="zone-nipple">
+      <div id="nipple-container"></div>
+    </div>
+
+    <div class="valeur-throttle">
+      <span id="val-throttle">0</span> %
+      <span>throttle</span>
+    </div>
+
+    <button id="btn-stop" onclick="arretUrgence()">
+      ⛔ ARRÊT D'URGENCE
+    </button>
+  </div>
+
+</main>
+
+<!-- NippleJS (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// UUIDs — !! modifier ici ET dans le firmware pour votre binôme !!
+// ═══════════════════════════════════════════════════════════════════
+const SERVICE_UUID  = "a2b3c4d5-0001-4abc-8def-123456789abc";
+const THROTTLE_UUID = "a2b3c4d5-0002-4abc-8def-123456789abc";
+const ARM_UUID      = "a2b3c4d5-0003-4abc-8def-123456789abc";
+const STATUS_UUID   = "a2b3c4d5-0004-4abc-8def-123456789abc";
+
+// ═══════════════════════════════════════════════════════════════════
+// Variables globales
+// ═══════════════════════════════════════════════════════════════════
+let device, throttleChar, armChar, statusChar;
+let escState    = 0;      // miroir de l'état reçu par notification
+let throttleVal = 0;
+let modeActuel  = 'slider';
+let nippleManager = null;
+let dernierEnvoi  = 0;
+const INTERVALLE_MIN = 50; // ms — évite de saturer la liaison BLE
+
+// ═══════════════════════════════════════════════════════════════════
+// Connexion BLE
+// ═══════════════════════════════════════════════════════════════════
+async function connecter() {
+  try {
+    document.getElementById('btn-connect').disabled = true;
+    document.getElementById('txt-statut').textContent = 'Connexion…';
+
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }]
+    });
+
+    device.addEventListener('gattserverdisconnected', onDeconnexion);
+
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+
+    throttleChar = await service.getCharacteristic(THROTTLE_UUID);
+    armChar      = await service.getCharacteristic(ARM_UUID);
+    statusChar   = await service.getCharacteristic(STATUS_UUID);
+
+    // Activer les notifications d'état
+    await statusChar.startNotifications();
+    statusChar.addEventListener('characteristicvaluechanged', onStatusChange);
+
+    setUI(true);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('btn-connect').disabled = false;
+    document.getElementById('txt-statut').textContent = 'Erreur : ' + err.message;
+  }
+}
+
+function onDeconnexion() {
+  setUI(false);
+  escState = 0;
+  mettreAJourEtapes(0);
+}
+
+function setUI(connecte) {
+  document.getElementById('dot').className          = connecte ? 'connecte' : '';
+  document.getElementById('txt-statut').textContent = connecte ? 'Connecté' : 'Déconnecté';
+  document.getElementById('btn-connect').disabled   = connecte;
+  document.getElementById('section-wizard').style.display  = connecte ? '' : 'none';
+  document.getElementById('section-controle').style.display = (connecte && escState === 4) ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Notifications d'état depuis l'ESP32
+// ═══════════════════════════════════════════════════════════════════
+function onStatusChange(evt) {
+  escState = evt.target.value.getUint8(0);
+  mettreAJourEtapes(escState);
+
+  const afficherControle = escState === 4;
+  document.getElementById('section-controle').style.display = afficherControle ? '' : 'none';
+
+  // Synchroniser l'affichage du slider de pré-armement selon l'état
+  if (escState === 1) {
+    // L'ESP32 a forcé throttle à 100 % — refléter dans l'UI
+    document.getElementById('pre-slider').value = '100';
+    document.getElementById('pre-val').textContent = '100 %';
+    document.getElementById('pre-val').style.color = '#2e7d32';
+  }
+  if (escState === 3) {
+    // L'ESP32 a forcé throttle à 0 % — refléter dans l'UI
+    document.getElementById('pre-slider').value = '0';
+    document.getElementById('pre-val').textContent = '0 %';
+  }
+  if (escState !== 4) {
+    throttleVal = 0;
+    document.getElementById('val-throttle').textContent = '0';
+    document.getElementById('slider-throttle').value = '0';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Wizard d'armement
+// ═══════════════════════════════════════════════════════════════════
+function mettreAJourEtapes(etat) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('etape' + i);
+    el.className = 'etape';
+    if (i < etat + 1) el.classList.add('faite');
+    if (i === etat + 1) el.classList.add('active');
+  }
+}
+
+function verifierCent() {
+  const val = parseInt(document.getElementById('pre-slider').value);
+  document.getElementById('pre-val').textContent = val + ' %';
+  document.getElementById('pre-val').style.color = val === 100 ? '#2e7d32' : '#c62828';
+  document.getElementById('btn-etape1').disabled = (val !== 100);
+}
+
+async function armerEtape(cmd) {
+  try {
+    await armChar.writeValue(new Uint8Array([cmd]));
+  } catch (err) {
+    console.error('Erreur envoi ARM:', err);
+  }
+}
+
+async function desarmer() {
+  try {
+    await armChar.writeValue(new Uint8Array([0]));
+    await envoyerThrottle(0);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Initialisation : étape 1 active
+mettreAJourEtapes(0);
+document.getElementById('etape1').classList.add('active');
+
+// ═══════════════════════════════════════════════════════════════════
+// Envoi du throttle
+// ═══════════════════════════════════════════════════════════════════
+async function envoyerThrottle(pct) {
+  if (!throttleChar || escState !== 4) return;
+
+  const maintenant = Date.now();
+  if (maintenant - dernierEnvoi < INTERVALLE_MIN) return;
+  dernierEnvoi = maintenant;
+
+  pct = Math.max(0, Math.min(100, Math.round(pct)));
+  throttleVal = pct;
+  document.getElementById('val-throttle').textContent = pct;
+  document.getElementById('slider-throttle').value    = pct;
+
+  try {
+    await throttleChar.writeValue(new Uint8Array([pct]));
+  } catch (err) {
+    console.error('Erreur envoi throttle:', err);
+  }
+}
+
+async function arretUrgence() {
+  throttleVal = 0;
+  document.getElementById('val-throttle').textContent = '0';
+  document.getElementById('slider-throttle').value    = '0';
+  if (!throttleChar) return;
+  try {
+    await throttleChar.writeValue(new Uint8Array([0]));
+  } catch (err) { console.error(err); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Bascule slider ↔ joystick
+// ═══════════════════════════════════════════════════════════════════
+function setMode(mode) {
+  modeActuel = mode;
+
+  document.getElementById('zone-slider').style.display = (mode === 'slider') ? 'block' : 'none';
+  document.getElementById('zone-nipple').style.display = (mode === 'nipple') ? 'flex'  : 'none';
+  document.getElementById('btn-mode-slider').className = (mode === 'slider') ? 'actif' : '';
+  document.getElementById('btn-mode-nipple').className = (mode === 'nipple') ? 'actif' : '';
+
+  // Initialiser NippleJS au premier basculement
+  if (mode === 'nipple' && nippleManager === null) {
+    nippleManager = nipplejs.create({
+      zone:     document.getElementById('nipple-container'),
+      mode:     'static',
+      position: { left: '50%', top: '50%' },
+      color:    '#1a73e8',
+      size:     140
+    });
+
+    nippleManager.on('move', (evt, data) => {
+      if (!data.vector) return;
+      // Axe Y uniquement pour les gaz :
+      //   joystick vers le haut  (y > 0) → accélération
+      //   joystick vers le bas   (y < 0) → retour à 0
+      const y = data.vector.y;
+      envoyerThrottle(Math.max(0, y) * 100);
+    });
+
+    nippleManager.on('end', () => {
+      envoyerThrottle(0);
+    });
+  }
+
+  // Remettre les gaz à 0 au changement de mode
+  envoyerThrottle(0);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aide-mémoire — ESC Dualsky XC-12-Lite</title>
+<style>
+  :root {
+    --bleu:   #1565c0;
+    --vert:   #2e7d32;
+    --orange: #e65100;
+    --rouge:  #b71c1c;
+    --violet: #4a148c;
+    --gris:   #f5f5f5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #eceff1;
+    color: #212121;
+    padding: 16px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.3em;
+    color: var(--bleu);
+    margin-bottom: 4px;
+  }
+  .sous-titre {
+    text-align: center;
+    font-size: .85em;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  /* ── Sections ──────────────────────────────────────────────── */
+  .section {
+    background: white;
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    margin-bottom: 18px;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section h2 {
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section h2.bleu   { color: var(--bleu);   border-color: var(--bleu); }
+  .section h2.vert   { color: var(--vert);   border-color: var(--vert); }
+  .section h2.orange { color: var(--orange); border-color: var(--orange); }
+
+  /* ── Tableaux ──────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9em;
+  }
+
+  th {
+    background: var(--gris);
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+  }
+
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* ── Badges ──────────────────────────────────────────────────*/
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: .78em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-vert    { background: #c8e6c9; color: var(--vert); }
+  .badge-orange  { background: #ffe0b2; color: var(--orange); }
+  .badge-bleu    { background: #bbdefb; color: var(--bleu); }
+  .badge-rouge   { background: #ffcdd2; color: var(--rouge); }
+  .badge-violet  { background: #e1bee7; color: var(--violet); }
+
+  /* ── Étapes de procédure ────────────────────────────────────── */
+  .etapes { display: flex; flex-direction: column; gap: 10px; }
+
+  .etape {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--gris);
+    border-left: 4px solid #ccc;
+  }
+
+  .etape.bleu   { border-left-color: var(--bleu); }
+  .etape.vert   { border-left-color: var(--vert); }
+  .etape.orange { border-left-color: var(--orange); }
+  .etape.violet { border-left-color: var(--violet); }
+
+  .etape-num {
+    min-width: 28px; height: 28px;
+    border-radius: 50%;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: .9em; flex-shrink: 0;
+  }
+  .bg-bleu   { background: var(--bleu); }
+  .bg-vert   { background: var(--vert); }
+  .bg-orange { background: var(--orange); }
+  .bg-violet { background: var(--violet); }
+
+  .etape-texte strong { display: block; margin-bottom: 2px; font-size: .95em; }
+  .etape-texte small  { color: #777; font-size: .82em; }
+
+  /* ── LED ────────────────────────────────────────────────────── */
+  .led {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 4px;
+    border: 1px solid rgba(0,0,0,.15);
+  }
+
+  /* ── Colonnes ────────────────────────────────────────────────── */
+  .deux-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 600px) { .deux-col { grid-template-columns: 1fr; } }
+
+  /* ── Note ────────────────────────────────────────────────────── */
+  .note {
+    background: #fff8e1;
+    border-left: 4px solid #f9a825;
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: .85em;
+    color: #5d4037;
+    margin-top: 12px;
+  }
+
+  .conseille {
+    background: #e8f5e9;
+    color: var(--vert);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>Aide-mémoire — ESC Dualsky XC-12-Lite</h1>
+<p class="sous-titre">Réglages progCard · Procédures de démarrage · Témoin LED ESP32</p>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RÉGLAGES PROGCARD
+══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="vert">Réglages progCard — valeurs conseillées pour l'aéroglisseur</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:3em">#</th>
+        <th>Paramètre</th>
+        <th>Valeur conseillée</th>
+        <th>Autres valeurs</th>
+        <th>Justification</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Frein</td>
+        <td><span class="badge badge-vert conseille">Off</span></td>
+        <td>On</td>
+        <td>Aucun besoin de frein électrique sur un aéroglisseur.<br>
+            <small>Le frein fait résister le moteur à l'arrêt — inutile et risqué ici.</small></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Type de batterie</td>
+        <td><span class="badge badge-vert conseille">LiPo</span></td>
+        <td>NiMH/NiCd</td>
+        <td>Batteries LiPo utilisées dans ce projet.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Mode de coupure basse tension</td>
+        <td><span class="badge badge-vert conseille">Réduction progressive</span></td>
+        <td>Coupure immédiate</td>
+        <td>La réduction progressive laisse le temps de réagir avant l'arrêt total.<br>
+            <small>La coupure immédiate peut être dangereuse si l'aéroglisseur est en mouvement.</small></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Seuil de coupure basse tension</td>
+        <td><span class="badge badge-orange conseille">Haut (3,4 V/cell)</span></td>
+        <td>Bas (3,0 V) · Moyen (3,2 V)</td>
+        <td>Protège les batteries LiPo contre la décharge profonde.<br>
+            <small>En contexte scolaire, les batteries sont souvent peu surveillées —
+            un seuil élevé préserve leur durée de vie.</small></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Démarrage moteur</td>
+        <td><span class="badge badge-bleu conseille">Doux (Soft)</span></td>
+        <td>Normal · Très doux (Super-soft)</td>
+        <td>Démarrage progressif : évite les à-coups, plus sécurisé en TP.<br>
+            <small>Normal convient aux avions. Très doux serait trop lent (~6 s de 0 à 100 %).
+            Astuce : throttle MAX→MIN→MAX en &lt; 3 s force le mode Normal si besoin.</small></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Avance d'angle (timing)</td>
+        <td><span class="badge badge-vert conseille">Basse (Low)</span> en premier<br>
+            puis <span class="badge badge-bleu">Moyenne (Medium)</span> si le moteur chauffe peu</td>
+        <td>Haute</td>
+        <td>
+          <strong>Low</strong> : moteurs 2 pôles et majorité des applications — moins de chauffe.<br>
+          <strong>Medium</strong> : outrunners 6 pôles et plus (cas typique en modélisme) — meilleure efficacité.<br>
+          <strong>High</strong> : moteurs grande vitesse / grands outrunners uniquement.<br>
+          <small>Commencer par Low en TP. Tester Medium si le moteur tourne bien sans chauffer.
+          Bonne activité élève : comparer la température moteur après 30 s en Low puis Medium.</small>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Valeurs par défaut Dualsky :</strong> Frein Off · LiPo · Réduction progressive · Seuil Moyen · Démarrage Normal · Timing Moyen.<br>
+    Seuls les paramètres 4 (Seuil → Haut), 5 (Démarrage → Doux) et 6 (Timing → Bas) nécessitent une modification.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DEUX PROCÉDURES
+══════════════════════════════════════════════════════════════════ -->
+<div class="deux-col">
+
+  <!-- Calibration PWM (première utilisation) -->
+  <div class="section">
+    <h2 class="orange">Calibration PWM
+      <span class="badge badge-orange" style="font-size:.7em;text-transform:none;">1 fois au départ</span>
+    </h2>
+    <p style="font-size:.82em;color:#777;margin-bottom:12px;">
+      Apprend à l'ESC les impulsions MIN et MAX de la commande.
+      À refaire si la télécommande ou l'ESP32 change.
+    </p>
+    <div class="etapes">
+      <div class="etape orange">
+        <div class="etape-num bg-orange">1</div>
+        <div class="etape-texte">
+          <strong>Throttle à 100 % (MAX)</strong>
+          <small>Mettre le curseur à sa valeur maximale avant de connecter.</small>
+        </div>
+      </div>
+      <div class="etape orange">
+        <div class="etape-num bg-orange">2</div>
+        <div class="etape-texte">
+          <strong>Connecter la batterie</strong>
+          <small>Attendre ~2 s · mélodie d'initialisation · bips de comptage cellules.</small>
+        </div>
+      </div>
+      <div class="etape orange">
+        <div class="etape-num bg-orange">3</div>
+        <div class="etape-texte">
+          <strong>Un long bip</strong>
+          <small>L'ESC a détecté et mémorisé la position MAX.</small>
+        </div>
+      </div>
+      <div class="etape orange">
+        <div class="etape-num bg-orange">4</div>
+        <div class="etape-texte">
+          <strong>Descendre le throttle à 0 % (MIN)</strong>
+          <small>Attendre ~1 s.</small>
+        </div>
+      </div>
+      <div class="etape vert">
+        <div class="etape-num bg-vert">5</div>
+        <div class="etape-texte">
+          <strong>Mélodie de confirmation</strong>
+          <small>Position MIN mémorisée · ESC calibré et armé · le moteur peut démarrer.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Démarrage normal (utilisation courante) -->
+  <div class="section">
+    <h2 class="bleu">Démarrage normal
+      <span class="badge badge-bleu" style="font-size:.7em;text-transform:none;">usage courant en TP</span>
+    </h2>
+    <p style="font-size:.82em;color:#777;margin-bottom:12px;">
+      À utiliser à chaque session une fois la calibration PWM effectuée.
+    </p>
+    <div class="etapes">
+      <div class="etape bleu">
+        <div class="etape-num bg-bleu">1</div>
+        <div class="etape-texte">
+          <strong>Throttle à 0 % (MIN)</strong>
+          <small>Vérifier que le curseur est à zéro avant de connecter.</small>
+        </div>
+      </div>
+      <div class="etape bleu">
+        <div class="etape-num bg-bleu">2</div>
+        <div class="etape-texte">
+          <strong>Connecter la batterie</strong>
+          <small>L'ESC émet les bips de comptage de cellules LiPo<br>
+                 (2S → 2 bips · 3S → 3 bips).</small>
+        </div>
+      </div>
+      <div class="etape vert">
+        <div class="etape-num bg-vert">3</div>
+        <div class="etape-texte">
+          <strong>Mélodie de confirmation</strong>
+          <small>ESC armé et prêt · augmenter progressivement le throttle.</small>
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:10px;">
+      Si le moteur ne démarre pas : vérifier que le throttle était bien à 0 lors
+      de la connexion batterie, ou que le canal throttle du récepteur n'est pas inversé.
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TÉMOIN LED ESP32
+══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="bleu">Témoin NeoPixel ESP32-C3 — états du firmware</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>LED</th>
+        <th>État</th>
+        <th>Signification</th>
+        <th>Action attendue</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="led" style="background:#e53935;"></span> Rouge fixe</td>
+        <td><span class="badge badge-rouge">IDLE</span></td>
+        <td>ESP32 en attente de connexion BLE</td>
+        <td>Se connecter depuis la page HTML</td>
+      </tr>
+      <tr>
+        <td><span class="led" style="background:#ef6c00;"></span> Orange fixe</td>
+        <td><span class="badge badge-orange">THROTTLE HIGH</span></td>
+        <td>Throttle forcé à 100 % — attente connexion batterie</td>
+        <td>Connecter la batterie à l'ESC</td>
+      </tr>
+      <tr>
+        <td><span class="led" style="background:#1e88e5;"></span> Bleu fixe</td>
+        <td><span class="badge badge-bleu">WAITING BEEP</span></td>
+        <td>Batterie connectée — attente du long bip ESC</td>
+        <td>Écouter le long bip puis confirmer dans l'interface</td>
+      </tr>
+      <tr>
+        <td><span class="led" style="background:#8e24aa;"></span> Violet fixe</td>
+        <td><span class="badge badge-violet">THROTTLE LOW</span></td>
+        <td>Throttle forcé à 0 % — ESC apprend la position MIN</td>
+        <td>Écouter la mélodie de confirmation puis confirmer</td>
+      </tr>
+      <tr>
+        <td><span class="led" style="background:#43a047;"></span> Vert fixe</td>
+        <td><span class="badge badge-vert">ARMED</span></td>
+        <td>ESC calibré et armé — moteur prêt</td>
+        <td>Utiliser le curseur ou le joystick pour contrôler la vitesse</td>
+      </tr>
+      <tr>
+        <td><span class="led" style="background:#039be5; opacity:.4;"></span> Bleu pâle fixe</td>
+        <td>—</td>
+        <td>Client BLE connecté (démarrage firmware)</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CARACTÉRISTIQUES TECHNIQUES
+══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="bleu">Caractéristiques techniques — XC-12-Lite</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:50%;color:#555;">Courant continu / crête</td>
+          <td><strong>12 A / 16 A</strong></td></tr>
+      <tr><td style="color:#555;">Batteries compatibles</td>
+          <td>LiPo <strong>2S–3S</strong> · NiMH/NiCd 5–10 cells</td></tr>
+      <tr><td style="color:#555;">BEC</td>
+          <td>5,2 V · max. 1 A</td></tr>
+      <tr><td style="color:#555;">Fréquence PWM interne</td>
+          <td>10 kHz</td></tr>
+      <tr><td style="color:#555;">Dimensions / masse</td>
+          <td>28 × 18 × 6 mm · 7,5 g</td></tr>
+      <tr><td style="color:#555;">Plage PWM commande (firmware)</td>
+          <td>0,5 ms – 2,5 ms @ 50 Hz<br>
+              <small>duty_u16 : 1638 (min) → 8192 (max)</small></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p style="text-align:center;font-size:.75em;color:#aaa;margin-top:8px;">
+  D'après Dualsky Models — 41ZX20C1710 · XController Lite Brushless ESC Operating Instruction
+</p>
+
+</body>
+</html>
