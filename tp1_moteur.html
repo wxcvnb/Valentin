@@ -412,6 +412,12 @@ async function connecter() {
     await statusChar.startNotifications();
     statusChar.addEventListener('characteristicvaluechanged', onStatusChange);
 
+    // Lire l'état courant explicitement (la notification initiale peut arriver
+    // avant que startNotifications() soit prêt et être manquée)
+    const stateVal = await statusChar.readValue();
+    escState = stateVal.getUint8(0);
+    mettreAJourEtapes(escState);
+
     setUI(true);
   } catch (err) {
     console.error(err);
