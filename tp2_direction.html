@@ -284,8 +284,16 @@ async function connecter() {
     document.getElementById('btn-connect').disabled = true;
     document.getElementById('txt-statut').textContent = 'Connexion…';
 
+    if (!navigator.bluetooth) {
+      throw new Error(
+        'Web Bluetooth non disponible.\n' +
+        '→ Utiliser Chrome ou Edge\n' +
+        '→ La page doit être servie en HTTPS (GitHub Pages ou localhost)'
+      );
+    }
     device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [SERVICE_UUID] }]
+      filters: [{ name: 'Aeroglisseur' }],
+      optionalServices: [SERVICE_UUID]
     });
 
     device.addEventListener('gattserverdisconnected', onDeconnexion);
