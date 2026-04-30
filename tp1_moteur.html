@@ -421,17 +421,19 @@ async function connecter() {
     armChar      = await service.getCharacteristic(ARM_UUID);
     statusChar   = await service.getCharacteristic(STATUS_UUID);
 
-    // Activer les notifications d'état
-    await statusChar.startNotifications();
-    statusChar.addEventListener('characteristicvaluechanged', onStatusChange);
+    // Notifications (backup — pas toujours fiables avec MicroPython)
+    try {
+      await statusChar.startNotifications();
+      statusChar.addEventListener('characteristicvaluechanged', onStatusChange);
+    } catch(e) { console.warn('Notifications non disponibles, polling actif'); }
 
-    // Lire l'état courant explicitement (la notification initiale peut arriver
-    // avant que startNotifications() soit prêt et être manquée)
+    // Lecture initiale de l'état
     const stateVal = await statusChar.readValue();
     escState = stateVal.getUint8(0);
     mettreAJourEtapes(escState);
 
     setUI(true);
+    demarrerPolling();
   } catch (err) {
     console.error(err);
     document.getElementById('btn-connect').disabled = false;
@@ -439,7 +441,30 @@ async function connecter() {
   }
 }
 
+let pollingTimer = null;
+
+function demarrerPolling() {
+  arreterPolling();
+  pollingTimer = setInterval(async () => {
+    if (!statusChar) return;
+    try {
+      const val = await statusChar.readValue();
+      const nouvelEtat = val.getUint8(0);
+      if (nouvelEtat !== escState) {
+        escState = nouvelEtat;
+        mettreAJourEtapes(escState);
+        setControleArme(escState === 4);
+      }
+    } catch(e) { arreterPolling(); }
+  }, 500);
+}
+
+function arreterPolling() {
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+}
+
 function onDeconnexion() {
+  arreterPolling();
   setUI(false);
   escState = 0;
   mettreAJourEtapes(0);
