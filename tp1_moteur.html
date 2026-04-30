@@ -335,9 +335,9 @@
     <!-- Mode slider -->
     <div id="zone-slider">
       <input type="range" id="slider-throttle"
-             min="0" max="100" value="0" disabled
+             min="0" max="100" value="0"
              oninput="envoyerThrottle(parseInt(this.value))">
-      <p id="msg-attente-arm" style="color:#e65100;font-size:0.85em;margin:4px 0 0;">
+      <p id="msg-attente-arm" style="color:#e65100;font-size:0.85em;margin:4px 0 0;display:none;">
         ⏳ En attente de l'armement (LED verte)…
       </p>
     </div>
@@ -445,11 +445,7 @@ function setUI(connecte) {
 }
 
 function actualiserCurseur() {
-  const arme = escState === 4;
-  const slider = document.getElementById('slider-throttle');
-  slider.disabled = !arme;
-  slider.style.opacity = arme ? '1' : '0.35';
-  document.getElementById('msg-attente-arm').style.display = arme ? 'none' : '';
+  // Le slider est toujours actif — le firmware ignore les commandes si non armé
 }
 
 // ═══════════════════════════════════════════════════════════════════
