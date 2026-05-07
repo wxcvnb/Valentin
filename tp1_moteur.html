@@ -369,6 +369,29 @@
 
 </main>
 
+<footer style="text-align:center; padding:20px 16px 28px; font-size:.82em; color:#888; display:flex; flex-direction:column; gap:12px; align-items:center;">
+
+  <!-- UUIDs actifs -->
+  <details style="background:#f5f5f5; border-radius:8px; padding:8px 16px; max-width:560px; width:100%; text-align:left; cursor:pointer;">
+    <summary style="font-weight:600; color:#555; user-select:none;">🔑 UUIDs actifs (binôme)</summary>
+    <table id="uuid-table" style="margin-top:8px; font-size:.85em; font-family:monospace; border-collapse:collapse; width:100%;">
+      <tr><td style="color:#888; padding:2px 8px 2px 0;">Service</td>    <td id="u-service"></td></tr>
+      <tr><td style="color:#888; padding:2px 8px 2px 0;">Throttle</td>   <td id="u-throttle"></td></tr>
+      <tr><td style="color:#888; padding:2px 8px 2px 0;">Arm</td>        <td id="u-arm"></td></tr>
+      <tr><td style="color:#888; padding:2px 8px 2px 0;">Status</td>     <td id="u-status"></td></tr>
+    </table>
+  </details>
+
+  <!-- Lien gaz_simple -->
+  <a href="gaz_simple.html"
+     style="color:#1565c0; text-decoration:none; font-weight:600; font-size:.9em; padding:8px 18px; border:2px solid #1565c0; border-radius:8px; transition:background .2s;"
+     onmouseover="this.style.background='#e3f0ff'"
+     onmouseout="this.style.background=''">
+    🎚 Ouvrir la page Gaz simple →
+  </a>
+
+</footer>
+
 <!-- NippleJS (CDN) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
 
@@ -628,5 +651,13 @@ function setMode(mode) {
 }
 </script>
 
+
+<script>
+// Afficher les UUIDs dans le footer
+document.getElementById('u-service').textContent  = SERVICE_UUID;
+document.getElementById('u-throttle').textContent = THROTTLE_UUID;
+document.getElementById('u-arm').textContent      = ARM_UUID;
+document.getElementById('u-status').textContent   = STATUS_UUID;
+</script>
 </body>
 </html>
