@@ -128,7 +128,7 @@ ble.gap_advertise(None)
 
 def start_advertising():
     # !! Remplacer par votre prénom (ex: b"Alice") !!
-    name = b"Aeroglisseur"
+    name = b"Valentin"
     adv  = b'\x02\x01\x06' + bytes([len(name) + 1, 0x09]) + name
     assert len(adv) <= 31
     ble.gap_advertise(100_000, adv)
