@@ -100,12 +100,12 @@ def update_state(new_state):
 # !! Les élèves modifient ces UUIDs pour différencier leur binôme !!
 # (modifier aussi les UUIDs dans le fichier HTML correspondant)
 
-SERVICE_UUID   = bluetooth.UUID("a2b3c4d5-0001-4abc-8def-123456789val")
-THROTTLE_UUID  = bluetooth.UUID("a2b3c4d5-0002-4abc-8def-123456789val")
-ARM_UUID       = bluetooth.UUID("a2b3c4d5-0003-4abc-8def-123456789val")
-STATUS_UUID    = bluetooth.UUID("a2b3c4d5-0004-4abc-8def-123456789val")
-SERVO_LR_UUID  = bluetooth.UUID("a2b3c4d5-0005-4abc-8def-123456789val")
-SERVO_FB_UUID  = bluetooth.UUID("a2b3c4d5-0006-4abc-8def-123456789val")
+SERVICE_UUID   = bluetooth.UUID("a2b3c4d5-0001-4abc-8def-123456789fal")
+THROTTLE_UUID  = bluetooth.UUID("a2b3c4d5-0002-4abc-8def-123456789fal")
+ARM_UUID       = bluetooth.UUID("a2b3c4d5-0003-4abc-8def-123456789fal")
+STATUS_UUID    = bluetooth.UUID("a2b3c4d5-0004-4abc-8def-123456789fal")
+SERVO_LR_UUID  = bluetooth.UUID("a2b3c4d5-0005-4abc-8def-123456789fal")
+SERVO_FB_UUID  = bluetooth.UUID("a2b3c4d5-0006-4abc-8def-123456789fal")
 
 # ── Initialisation GATT ───────────────────────────────────────────────────────
 ble = bluetooth.BLE()
